@@ -4,6 +4,7 @@ export interface ComponentModel {
     className: string;
     componentTsPath: string;
     isInRountingModule: boolean;
+    countInModule: number;
 
 
     lisrOfUsedSelectors: string[];

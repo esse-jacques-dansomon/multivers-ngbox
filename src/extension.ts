@@ -49,7 +49,7 @@ function getWebviewContent(_unusedComponents: ComponentModel[]): string {
 			</thead>
 			<tbody>
 				${_unusedComponents.map(component => `
-						<tr><td>${component.className}</td></tr>
+						<tr><td> className : ${component.className} </td></tr>
 `).join('')}
 			</tbody>		
         </table>

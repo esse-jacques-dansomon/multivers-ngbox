@@ -29,6 +29,7 @@ export const getAllComponents = (projectPath: string): ComponentModel[] => {
             lisrOfUsedSelectors: [],
             listOfUsedClasses: [],
             amUsedIn: [],
+            countInModule: 0
 
          });
 
@@ -36,11 +37,6 @@ export const getAllComponents = (projectPath: string): ComponentModel[] => {
    });
    //log(components);
    return components;
-};
-
-export const getAllModules = (projectPath: string): string[] => {
-   const moduleFiles = getAllRoutingModuleFiles(projectPath);
-   return moduleFiles;
 };
 
 export const findSelectorInHtml = (htmlContent: any, selector: string): boolean => {
@@ -55,15 +51,20 @@ export const findClassNameInTs = (tsContent: any, className: string): boolean =>
    return matches ? true : false;
 };
 
-
-
-
+export const isComponentUsedInRouter = (projectPath: string, moduleFile: string, componentClassName: string): number => {
+   const moduleContent = getFileContent(projectPath, moduleFile);
+   const regex = new RegExp(`\\b${componentClassName}\\b`, 'g');
+   const matches = moduleContent.match(regex);
+   return matches ? matches.length : 0;
+};
 
 
 //algo :
 //1. voir les selectors des autres components utilise : .html  // lister l'endroit ou il est trouvé
 //2. le nom des class des classes utilisées dans les autres components // meme chose 
-//3. verfier dans les routings si il est utilisé 
+//3. la presence dans les modules de routage : .ts // lister l'endroit ou il est trouvé
+
+// importer mais pas utiliser 
 export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "not-used"): ComponentModel[] => {
    //map of all components with their where they are used 
    let mapComponents: Map<string, Component> = new Map();
@@ -73,7 +74,7 @@ export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "
    const usedModules: Set<string> = new Set();
 
    const components = getAllComponents(projectPath);
-   const modules = getAllModules(projectPath);
+   const modules = getAllRoutingModuleFiles(projectPath);
 
 
    components.forEach((component) => {
@@ -123,38 +124,38 @@ export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "
 
       });
 
-      //for each module, check if the component is used in it
+      // Check for selector usage in the component's TypeScript file
+      let count = 0;
       modules.forEach((module) => {
-         const moduleContent = getFileContent(projectPath, module);
-         const isUsed = findClassNameInTs(moduleContent, component.className);
-         if (isUsed) {
-            mapComponents.get(component.selector)?.moduleCalls.add(module);
+         const isUsed = isComponentUsedInRouter(projectPath, module, component.className);
+         if (isUsed !== 0) {
+            usedModules.add(component.selector);
             component.amUsedIn.push(module);
+            mapComponents.get(component.selector)?.moduleCalls.add(module);
             component.isInRountingModule = true;
-            usedModules.add(module);
          }
+         count += isUsed;
       }
+
+
       );
+
+
+      component.countInModule = count;
+
+
+
 
    });
 
-   log("modules", modules);
+   //log("modules", modules);
+   //log(mapComponents);
 
-   log(mapComponents);
-
-
-
-
-   const a = components.filter((component) =>
+   const unusedComponents = components.filter((component) =>
       !usedSelectors.has(component.selector) &&
-      !usedClasses.has(component.className) &&
-      !component.isInRountingModule);
+      !usedClasses.has(component.className) && component.countInModule <= 2
+   );
 
    //log("in ", components.length, " components, ", a.length, " are not used");
-   return a;
-
-
-
-
+   return unusedComponents;
 };
-

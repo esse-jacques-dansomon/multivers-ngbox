@@ -13,30 +13,17 @@ export const getElementFiles = (projectPath: string, type: 'component' | 'pipe' 
     return glob.sync(globPattern, { cwd: projectPath });
 };
 
-export const getAllRoutingModuleFiles = (projectPath: string): string[] => {
-    const globPattern = '**/*-routing.module.ts';
-    return glob.sync(globPattern, { cwd: projectPath, ignore: '**/*.spec.ts' });
-};
-
 // export const getAllRoutingModuleFiles = (projectPath: string): string[] => {
-//     const routingModuleFiles = [];
-
-//     const allFiles = getAllTsFileas(projectPath);
-
-//     for (const file of allFiles) {
-//         const fileContent = fs.readFileSync(file, 'utf-8');
-//         const moduleNameMatch = fileContent.match(/@NgModule\s*\(\s*{[^}]*imports:\s*\[[^}]*RouterModule[^}]*\][^}]*}\s*\)\s*export\s*class\s*(\w+)/);
-//         if (moduleNameMatch) {
-//             const moduleName = moduleNameMatch[1];
-//             const isRoutingModule = fileContent.includes('RouterModule') && fileContent.includes('routes:');
-//             if (isRoutingModule) {
-//                 routingModuleFiles.push(file);
-//             }
-//         }
-//     }
-
-//     return routingModuleFiles;
+//     const globPattern = '**/*-routing.module.ts';
+//     return glob.sync(globPattern, { cwd: projectPath, ignore: '**/*.spec.ts' });
 // };
+
+export const getAllRoutingModuleFiles = (projectPath: string): string[] => {
+
+    const allFiles = getElementFiles(projectPath, 'module');
+
+    return allFiles;
+};
 
 export const getFileContent = (projectPath: string, filePath: string): string => {
     //we need to join the project path with the file path because the file path is relative to the project path

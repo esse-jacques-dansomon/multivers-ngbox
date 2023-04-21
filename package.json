@@ -1,8 +1,9 @@
 {
   "name": "ngbox",
+  "repository": "https://github.com/esse-jacques-dansomon/multivers-ngbox.git",
   "displayName": "ngbox",
   "description": "ngbox",
-  "publisher": "multivers",
+  "publisher": "ngbox",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.77.0"
