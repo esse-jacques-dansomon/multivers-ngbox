@@ -1,13 +1,24 @@
 export interface ComponentModel {
     selector: string;
     templateUrl: string;
+    isInlineTemplate: boolean;
+    inlineTemplate: string;
     className: string;
     componentTsPath: string;
-    isInRountingModule: boolean;
+    isInRoutingModule: boolean;
     countInModule: number;
+    projectSrc: string;
+    styleUrls: string[];
 
 
-    lisrOfUsedSelectors: string[];
+    codeNumberLines: {
+        html: number;
+        ts: number;
+        css: number;
+    }
+
+
+    listOfUsedSelectors: string[];
     listOfUsedClasses: string[];
     amUsedIn: string[];
     // templateUrlPath: string;

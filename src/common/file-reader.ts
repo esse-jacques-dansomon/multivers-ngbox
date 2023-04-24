@@ -10,7 +10,9 @@ export const getAllTsFileas = (projectPath: string): string[] => {
 
 export const getElementFiles = (projectPath: string, type: 'component' | 'pipe' | 'service' | 'directive' | 'module' | 'routing.module'): string[] => {
     const globPattern = `**/*.${type}.ts`;
-    return glob.sync(globPattern, { cwd: projectPath });
+    //ignore node_modules
+    const listIgnore = ['**/node_modules/**', '**/*.spec.ts'];
+    return glob.sync(globPattern, { cwd: projectPath, ignore: listIgnore });
 };
 
 // export const getAllRoutingModuleFiles = (projectPath: string): string[] => {
