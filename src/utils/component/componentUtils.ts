@@ -1,6 +1,6 @@
 import { log } from "node:console";
 import { getAllRoutingModuleFiles, getElementFiles, getFileContent } from "../../common/file-reader";
-import { ComponentModel } from "../../models/models";
+import { AngularFile, ComponentModel } from "../../models/models";
 import * as path from 'node:path';
 
 export const getAllComponents = (projectPath: string): ComponentModel[] => {
@@ -10,14 +10,22 @@ export const getAllComponents = (projectPath: string): ComponentModel[] => {
    //pour chaque fichier de component
    componentFiles.forEach(componentFile => {
       const componentContent = getFileContent(projectPath, componentFile);
-      //const selectorMatch = componentContent.match(/selector:\s*['"`]\s*([\w-]+)\s*['"`]/);
-      // const templateUrlMatch = componentContent.match(/templateUrl:\s*['"`]\s*([^'"`]+)\s*['"`]/);
-      // const classNameMatch = componentContent.match(/export\s+class\s+([\w-]+)\s+{/);
-      const classRegex = /export\s+class\s+([\w-]+)\s+/;
-      const selectorRegex = /@Component\s*\({[^}]*selector:\s*['"`]\s*([\w-]+)\s*['"`]/;
-      const templateUrlRegex = /@Component\s*\({[^}]*templateUrl:\s*['"`]\s*([^'"`]+)\s*['"`]/;
-      const inlineTemplateRegex = /@Component\s*\({[^}]*template:\s*['"`]\s*([^'"`]+)\s*['"`]/;
-      const styleUrlsRegex = /@Component\s*\({[^}]*styleUrls:\s*\[\s*(['"`][^'"`]+['"`](?:\s*,\s*['"`][^'"`]+['"`])*\s*)\]/;
+
+      const classRegex = /\s*export\s+class\s+([\w-]+)\s+/;
+      // const classRegex = /\s*export\s+class\s+([\w-]+)\s+/;
+      //const classRegex = /\s*export\s+class\s+([\w-]+)\s+/;
+
+
+      // const selectorRegex = /@Component\s*\({[^}]*selector:\s*['"`]\s*([\w-]+)\s*['"`]/;
+      // const templateUrlRegex = /@Component\s*\({[^}]*templateUrl:\s*['"`]\s*([^'"`]+)\s*['"`]/;
+      // const inlineTemplateRegex = /@Component\s*\({[^}]*template:\s*['"`]\s*([^'"`]+)\s*['"`]/;
+      // const styleUrlsRegex = /@Component\s*\({[^}]*styleUrls:\s*\[\s*(['"`][^'"`]+['"`](?:\s*,\s*['"`][^'"`]+['"`])*\s*)\]/;
+      //const classRegex = /\s*export\s+class\s+([\w-]+)\s+/;
+      const selectorRegex = /@Component\s*\({[^}]*selector:\s*['"`]?\s*([\w-]+)\s*['"`]?\s*/;
+      const templateUrlRegex = /@Component\s*\({[^}]*templateUrl:\s*['"`]?\s*([^'"`\s]+)\s*['"`]?\s*/;
+      const inlineTemplateRegex = /@Component\s*\({[^}]*template:\s*['"`]?\s*([^'"`\s]+)\s*['"`]?\s*/;
+      const styleUrlsRegex = /@Component\s*\({[^}]*styleUrls:\s*\[\s*(['"`][^'"`\s]+['"`](?:\s*,\s*['"`][^'"`\s]+['"`])*\s*)\]\s*/;
+
       const selectorMatch = componentContent.match(selectorRegex);
       const templateUrlMatch = componentContent.match(templateUrlRegex);
       const classNameMatch = componentContent.match(classRegex);
@@ -28,14 +36,14 @@ export const getAllComponents = (projectPath: string): ComponentModel[] => {
          //get the last folder of the path //
          let firstFolder = projectPath.split(path.sep).slice(-1)[0];
          projectSrc = firstFolder + path.sep + projectSrc;
-         components.push({
+         const component: ComponentModel = ({
             selector: selectorMatch ? selectorMatch[1] : '',
             isInlineTemplate: inlineTemplateRegex.test(componentContent),
             templateUrl: inlineTemplateRegex.test(componentContent) ? '' : templateUrlMatch ? templateUrlMatch[1] : '',
             inlineTemplate: inlineTemplateRegex.test(componentContent) ? inlineTemplateMatch ? inlineTemplateMatch[1] : '' : '',
             className: classNameMatch ? classNameMatch[1] : '',
 
-            isInRoutingModule: false,
+
             componentTsPath: componentFile,
             countInModule: 0,
             codeNumberLines: {
@@ -46,16 +54,61 @@ export const getAllComponents = (projectPath: string): ComponentModel[] => {
             styleUrls: styleUrlsMatch ? styleUrlsMatch[1].split(',').map((styleUrl: string) => styleUrl.trim().replace(/['"`]/g, '')) : [],
             // get the first folders of the path and stop at src
             projectSrc: projectSrc,
-            listOfUsedSelectors: [],
-            listOfUsedClasses: [],
-            amUsedIn: [],
+            usedIn: {
+               modules: [],
+               components: [],
+               services: [],
+               pipes: [],
+               directives: [],
+               htmls: []
+            }
 
          });
-
+         const updateComponent = calComponentLines(projectPath, component);
+         components.push(updateComponent);
       }
    });
    //log(components);
    return components;
+};
+
+export const calComponentLines = (projectPath: string, component: ComponentModel): ComponentModel => {
+   try {
+      const htmlContent = component.isInlineTemplate ?
+         component.inlineTemplate : getFileContent(projectPath, path.join(path.dirname(component.componentTsPath),
+            component.templateUrl));
+      component.codeNumberLines.html = countFilelLines(htmlContent);
+   }
+   catch (e) {
+      console.log(e);
+   }
+
+
+   component.styleUrls.forEach((styleUrl) => {
+      try {
+         const styleContent = getFileContent(projectPath, path.join(path.dirname(component.componentTsPath), styleUrl));
+         component.codeNumberLines.css += countFilelLines(styleContent);
+      }
+      catch (e) {
+         console.log(e);
+      }
+   });
+
+
+   try {
+      const tsContent = getFileContent(projectPath, component.componentTsPath);
+      component.codeNumberLines.ts = countFilelLines(tsContent);
+   }
+   catch (e) {
+      console.log(e);
+   }
+   const tsContent = getFileContent(projectPath, component.componentTsPath);
+   component.codeNumberLines = {
+      html: component.codeNumberLines.html,
+      ts: component.codeNumberLines.ts,
+      css: component.codeNumberLines.css
+   };
+   return component;
 };
 
 export const findSelectorInHtml = (htmlContent: any, selector: string): boolean => {
@@ -81,14 +134,49 @@ export const countFilelLines = (fileContent: string): number => {
    const lines = fileContent.split(/\r\n|\r|\n/);
    return lines.length;
 };
+export const getFindFileType = (fileContent: any): AngularFile => {
+
+   if (fileContent.includes('@NgModule')) {
+      return 'module';
+   } else if (fileContent.includes('@Component')) {
+      return 'component';
+   } else if (fileContent.includes('@Injectable')) {
+      return 'service';
+   } else if (fileContent.includes('@Pipe')) {
+      return 'pipe';
+   } else if (fileContent.includes('@Directive')) {
+      return 'directive';
+   } else if (fileContent.includes('const routes: Routes')) {
+      return 'route';
+   } else {
+      return 'unknown';
+   }
+};
 
 //algorithm:
 //1. check the selectors used by other components: .html // eg: <app-xxx>
 //2. the name of the classes used in other components: .ts // eg: this.service.call(ComponentClass) // import {ComponentClass} from 'path'
 //3. the presence in modules (routing and modules): .ts // eg: import {ComponentClass} from 'path', // eg: {path: 'xxx', component: ComponentClass},
 
+export const getUnUsedProjectComponents = (projectPath: string): any => {
+   const data = getComponentWIthTHeirDetailsProjectComponents(projectPath, "not-used");
+   const usedSelectors: Set<string> = data.usedSelectors as Set<string>;
+   const usedClasses: Set<string> = data.usedClasses as Set<string>;
+   const usedModules: Set<string> = data.usedModules as Set<string>;
+   const components = data.components as ComponentModel[];
+
+   const unusedComponents = components.filter((component) =>
+      !usedSelectors.has(component.selector) &&
+      !usedClasses.has(component.className) && component.countInModule <= 2
+   );
+   //order by projectSrc
+   return unusedComponents.sort((a, b) => {
+      return a.projectSrc.localeCompare(b.projectSrc);
+   });
+};
+
 // importer mais pas utiliser 
-export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "not-used"): ComponentModel[] => {
+export const getComponentWIthTHeirDetailsProjectComponents = (projectPath: string, type: "used" | "not-used"): any => {
    // Create sets to store used selectors and used classes and used modules
    const usedSelectors: Set<string> = new Set();
    const usedClasses: Set<string> = new Set();
@@ -102,47 +190,14 @@ export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "
    // Iterate through all the components and check if their selectors are used in any of the HTML files
    // and check if their classes are used in any of the TypeScript files
    components.forEach((component) => {
-      component.listOfUsedSelectors = [];
-      component.listOfUsedClasses = [];
-      component.amUsedIn = [];
-      //for html, css, ts count lines
-
-      try {
-         const htmlContent = component.isInlineTemplate ?
-            component.inlineTemplate : getFileContent(projectPath, path.join(path.dirname(component.componentTsPath),
-               component.templateUrl));
-         component.codeNumberLines.html = countFilelLines(htmlContent);
-      }
-      catch (e) {
-         console.log(e);
-      }
-
-
-      try {
-         component.styleUrls.forEach((styleUrl) => {
-            const styleContent = getFileContent(projectPath, path.join(path.dirname(component.componentTsPath), styleUrl));
-            component.codeNumberLines.css += countFilelLines(styleContent);
-         });
-      } catch (e) {
-         console.log(e);
-      }
-
-      try {
-         const tsContent = getFileContent(projectPath, component.componentTsPath);
-         component.codeNumberLines.ts = countFilelLines(tsContent);
-      }
-      catch (e) {
-         console.log(e);
-      }
-      const tsContent = getFileContent(projectPath, component.componentTsPath);
-      component.codeNumberLines = {
-         html: component.codeNumberLines.html,
-         ts: component.codeNumberLines.ts,
-         css: component.codeNumberLines.css
+      component.usedIn = {
+         modules: [],
+         components: [],
+         services: [],
+         pipes: [],
+         directives: [],
+         htmls: []
       };
-
-
-
 
       // Check for selector usage in HTML files
       components.forEach((componentY) => {
@@ -161,8 +216,7 @@ export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "
             const isUsed = findSelectorInHtml(htmlContent, component.selector);
             if (isUsed) {
                usedSelectors.add(component.selector);
-               component.listOfUsedSelectors.push(componentY.selector);
-               component.amUsedIn.push(componentY.componentTsPath);
+               component.usedIn.htmls.push(componentY.className);
             }
 
          } catch (error) {
@@ -177,37 +231,66 @@ export const getUnUsedProjectComponents = (projectPath: string, type: "used" | "
             const isItUsed = findClassNameInTs(componentTsContent, component.className);
             if (isItUsed) {
                usedClasses.add(component.className);
-               component.listOfUsedClasses.push(componentY.className);
-               component.amUsedIn.push(componentY.componentTsPath);
+               component.usedIn.components.push(componentY.componentTsPath);
             }
          }
 
 
       });
 
-      // Check for selector usage in the component's TypeScript file
+      // Check for class usage in the component's TypeScript file
       let count = 0;
       modules.forEach((module) => {
          const isUsed = isComponentUsedInRouter(projectPath, module, component.className);
          if (isUsed !== 0) {
             usedModules.add(component.selector);
-            component.amUsedIn.push(module);
-            component.isInRoutingModule = true;
+            //
+            const fileType = getFindFileType(getFileContent(projectPath, module));
+            log("info", `component ${component.className} is used in ${module} as ${fileType}`);
+            switch (fileType) {
+               case 'module':
+               case 'route':
+                  component.usedIn.modules.push(module);
+                  break;
+               case 'service':
+                  component.usedIn.services.push(module);
+                  break;
+               case 'pipe':
+                  component.usedIn.pipes.push(module);
+                  break;
+               case 'directive':
+                  component.usedIn.directives.push(module);
+                  break;
+               default:
+                  break;
+
+            }
          }
          count += isUsed;
       });
       component.countInModule = count;
+   });
+   return {
+      usedSelectors,
+      usedClasses,
+      usedModules,
+      components
+   };
+
+
+};
 
 
 
+export const orderAllComponents = (projectPath: string): ComponentModel[] => {
+   const cssPoints = 1;
+   const htmlPoints = 2;
+   const tsPoints = 3;
+   const components = getComponentWIthTHeirDetailsProjectComponents(projectPath, "used").components as ComponentModel[];
+   return components.sort((a, b) => {
+      const pointA = a.codeNumberLines.css * cssPoints + a.codeNumberLines.html * htmlPoints + a.codeNumberLines.ts * tsPoints;
+      const pointB = b.codeNumberLines.css * cssPoints + b.codeNumberLines.html * htmlPoints + b.codeNumberLines.ts * tsPoints;
+      return pointB - pointA;
    });
 
-   const unusedComponents = components.filter((component) =>
-      !usedSelectors.has(component.selector) &&
-      !usedClasses.has(component.className) && component.countInModule <= 2
-   );
-   //order by projectSrc
-   return unusedComponents.sort((a, b) => {
-      return a.projectSrc.localeCompare(b.projectSrc);
-   });
 };

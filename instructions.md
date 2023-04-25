@@ -1,0 +1,24 @@
+## Architecture 
+- src
+  - commands
+    - command1.ts
+    - command2.ts
+    - index.ts
+  - configuration
+    - configuration.ts
+    - index.ts
+  - providers
+    - provider1.ts
+    - provider2.ts
+    - index.ts
+  - views
+    - panel1.ts
+    - panel2.ts
+    - webview1.ts
+    - webview2.ts
+    - index.ts
+  - utils
+    - util1.ts
+    - util2.ts
+    - index.ts
+  - extension.ts

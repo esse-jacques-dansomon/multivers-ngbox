@@ -15,6 +15,14 @@ export const getElementFiles = (projectPath: string, type: 'component' | 'pipe' 
     return glob.sync(globPattern, { cwd: projectPath, ignore: listIgnore });
 };
 
+export const getOtherTsFiles = (projectPath: string): string[] => {
+    //get directives, pipes, services and modules files and other ts files
+    const globPattern = '**/*.ts';
+    //ignore node_modules, spec files, component files 
+    const listIgnore = ['**/node_modules/**', '**/*.spec.ts', '**/*.component.ts'];
+    return glob.sync(globPattern, { cwd: projectPath, ignore: listIgnore });
+};
+
 // export const getAllRoutingModuleFiles = (projectPath: string): string[] => {
 //     const globPattern = '**/*-routing.module.ts';
 //     return glob.sync(globPattern, { cwd: projectPath, ignore: '**/*.spec.ts' });
@@ -22,7 +30,7 @@ export const getElementFiles = (projectPath: string, type: 'component' | 'pipe' 
 
 export const getAllRoutingModuleFiles = (projectPath: string): string[] => {
 
-    const allFiles = getElementFiles(projectPath, 'module');
+    const allFiles = getOtherTsFiles(projectPath);
 
     return allFiles;
 };

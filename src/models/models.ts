@@ -5,7 +5,6 @@ export interface ComponentModel {
     inlineTemplate: string;
     className: string;
     componentTsPath: string;
-    isInRoutingModule: boolean;
     countInModule: number;
     projectSrc: string;
     styleUrls: string[];
@@ -17,11 +16,16 @@ export interface ComponentModel {
         css: number;
     }
 
+    usedIn: {
+        modules: string[];
+        components: string[];
+        htmls: string[];
+        services: string[];
+        pipes: string[];
+        directives: string[];
+    }
 
-    listOfUsedSelectors: string[];
-    listOfUsedClasses: string[];
-    amUsedIn: string[];
-    // templateUrlPath: string;
+
 }
 
 export type Component = {
@@ -47,3 +51,6 @@ export interface DirectiveModel {
     className: string;
     directiveTsPath: string;
 }
+
+//declare file types
+export type AngularFile = "component" | "module" | "service" | "pipe" | "directive" | "route" | "unknown";
