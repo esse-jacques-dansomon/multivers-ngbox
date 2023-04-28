@@ -52,5 +52,15 @@ export interface DirectiveModel {
     directiveTsPath: string;
 }
 
+export interface ProjectModel {
+    projectSrc: string;
+    components: {
+        used: ComponentModel[];
+        unused: ComponentModel[];
+    };
+
+
+}
+
 //declare file types
 export type AngularFile = "component" | "module" | "service" | "pipe" | "directive" | "route" | "unknown";

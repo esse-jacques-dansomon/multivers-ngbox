@@ -68,7 +68,7 @@ export const getAllComponents = (projectPath: string): ComponentModel[] => {
          components.push(updateComponent);
       }
    });
-   //log(components);
+
    return components;
 };
 
@@ -246,7 +246,7 @@ export const getComponentWIthTHeirDetailsProjectComponents = (projectPath: strin
             usedModules.add(component.selector);
             //
             const fileType = getFindFileType(getFileContent(projectPath, module));
-            log("info", `component ${component.className} is used in ${module} as ${fileType}`);
+
             switch (fileType) {
                case 'module':
                case 'route':
@@ -293,4 +293,35 @@ export const orderAllComponents = (projectPath: string): ComponentModel[] => {
       return pointB - pointA;
    });
 
+};
+
+
+export const compareProjectComponents = (projectPath: string, projectPath2: string): any => {
+   //get the last foldername 
+   const project1Name = path.basename(projectPath);
+   const project2Name = path.basename(projectPath2);
+
+   const project1Components = orderAllComponents(projectPath) as ComponentModel[];
+
+   const project2Components = orderAllComponents(projectPath2) as ComponentModel[];
+
+   //compare the used components to list the components that are not used in the other project
+   const project1UnusedComponentsInProject2 = project1Components.filter((component) => {
+      return !project2Components.some((component2) => {
+         return component.className === component2.className;
+      });
+   }
+   );
+
+   const project2UnusedComponentsInProject1 = project2Components.filter((component) => {
+      return !project1Components.some((component2) => {
+         return component.className === component2.className;
+      });
+   }
+   );
+
+   return {
+      "project1": project1UnusedComponentsInProject2,
+      "project2": project2UnusedComponentsInProject1
+   };
 };

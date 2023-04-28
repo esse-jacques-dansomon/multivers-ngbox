@@ -1,7 +1,9 @@
 /* eslint-disable curly */
 import * as vscode from 'vscode';
 import { getScanWebviewContent, scanForUnusedComponents } from './app';
-import { orderAllComponents } from './utils/component/componentUtils';
+import { compareProjectComponents, orderAllComponents } from './utils/component/componentUtils';
+import { saveInJson } from './common/pdf';
+import { Loader } from './utils/vscod-utils';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,9 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const scanForUnusedComponentsCommand = vscode.commands.registerCommand('ngbox.scan.components', async () => {
 		// const statusBarItem = vscode.window.setStatusBarMessage('Scanning for unused components...');
 		//show status bar text while scanning
-		const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
-		statusBarItem.text = "NgBox : $(sync~spin) Loading...";
-		statusBarItem.show();
+		Loader.show();
 		const projectPath = getWorkingDirectory();
 		//add ngbox name to status bar
 		if (!projectPath) {
@@ -23,23 +23,24 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		try {
 			const unusedComponents = await scanForUnusedComponents(projectPath);
+
 			const panel = vscode.window.createWebviewPanel(
 				'unusedComponents',
 				'Unused Components',
 				vscode.ViewColumn.Two,
-				{},
+				{
+					enableScripts: true,
+					enableCommandUris: true,
+
+				},
 			);
-			panel.webview.html = getScanWebviewContent(unusedComponents, "Unused Components");
-			statusBarItem.text = "NgBox : $(check) Operation successful";
-			setTimeout(() => {
-				statusBarItem.hide();
-			}, 3000);
+			const htmlContent = getScanWebviewContent(unusedComponents, "Unused Components");
+			panel.webview.html = htmlContent;
+			Loader.hide();
+
 		} catch (error) {
-			//vscode.window.showErrorMessage(`Error scanning for unused components: ${error}`);
-			statusBarItem.text = "NgBox : $(error) Operation failed";
-			setTimeout(() => {
-				statusBarItem.hide();
-			}, 3000);
+			Loader.hide();
+			vscode.window.showErrorMessage(`Error scanning for unused components: ${error}`);
 		}
 	});
 	context.subscriptions.push(scanForUnusedComponentsCommand);
@@ -49,20 +50,53 @@ export function activate(context: vscode.ExtensionContext) {
 	 * @description This method is called to get unused modules
 	 * @param context
 	 */
-	const getUnusedModulesCommand = vscode.commands.registerCommand('ngbox.scan.modules', () => {
-		vscode.window.showInformationMessage('Hello from command ngbox.scan.module!');
+	const getUnusedModulesCommand = vscode.commands.registerCommand('ngbox.compare.projects', async () => {
+		Loader.show();
+		const result = await vscode.window.showInputBox({ prompt: 'Please enter two arguments separated by a comma' });
+		if (result) {
+			try {
+				const project1 = "/Users/essejacques.co/projects/mutivers/midgard-firewatch-fe/libs";
+				const project2 = "/Users/essejacques.co/projects/mutivers/midgard-ai";
+				//const [project1, project2] = result.split(",");
+				const results = await compareProjectComponents(project1.trim(), project2.trim());
+				console.log(results);
+				const panel = vscode.window.createWebviewPanel(
+					'comparedComponents',
+					'Compared Components',
+					vscode.ViewColumn.Two,
+					{
+						enableScripts: true,
+					},
+				);
+				panel.webview.html = getScanWebviewContent(results["project1"], "Compared Components 1");
+
+				const panel2 = vscode.window.createWebviewPanel(
+					'comparedComponents2',
+					'Compared Components 2',
+					vscode.ViewColumn.Two,
+					{
+						enableScripts: true,
+					},
+				);
+				panel2.webview.html = getScanWebviewContent(results["project2"], "Compared Components 2");
+				Loader.hide();
+			} catch (error) {
+				Loader.hide();
+				vscode.window.showErrorMessage(`Error comparing projects: ${error}`);
+			}
+		}
 	});
 	context.subscriptions.push(getUnusedModulesCommand);
 
 
-	const orderAllComponentsCommand = vscode.commands.registerCommand('ngbox.order.components', () => {
-		vscode.window.showInformationMessage('Hello from command ngbox.order.components!');
+	const orderAllComponentsCommand = vscode.commands.registerCommand('ngbox.order.components', async () => {
+		Loader.show();
 		try {
 			const projectPath = getWorkingDirectory();
 			if (!projectPath) {
 				return;
 			}
-			const unusedComponents = orderAllComponents(projectPath);
+			const unusedComponents = await orderAllComponents(projectPath);
 			const panel = vscode.window.createWebviewPanel(
 				'OderedComponents',
 				'Odered Components',
@@ -70,8 +104,10 @@ export function activate(context: vscode.ExtensionContext) {
 				{},
 			);
 			panel.webview.html = getScanWebviewContent(unusedComponents, "Ordered Components");
+			Loader.hide();
 		}
 		catch (error) {
+			Loader.hide();
 			vscode.window.showErrorMessage(`Error ordering components: ${error}`);
 		}
 	}

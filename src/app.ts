@@ -112,4 +112,17 @@ export function getScanWebviewContent(_unusedComponents: ComponentModel[] | null
 	}
 }
 
+export const saveRappor = (unusedComponents: ComponentModel[] | null, title: string) => {
+	const date = new Date();
+	const pdfName = `${title}-${date.getFullYear()}-${date.getMonth()}-${date.getDay()}-${date.getHours()}-${date.getMinutes()}-${date.getSeconds()}.pdf`;
+	const pdfPath = `${process.cwd()}/${pdfName}`;
+	const pdfContent = getScanWebviewContent(unusedComponents, title);
+	const pdf = require('html-pdf');
+	const options = { format: 'Letter' };
+	pdf.create(pdfContent, options).toFile(pdfPath, function (err: any, res: any) {
+		if (err) return console.log(err);
+		console.log(res);
+	}
+	);
+};
 

@@ -18,14 +18,68 @@
         "title": "Ngbox : Scan components"
       },
       {
-        "command": "ngbox.scan.modules",
-        "title": "Ngbox : Scan modules"
-      },
-      {
         "command": "ngbox.order.components",
         "title": "Ngbox : Order components"
+      },
+      {
+        "command": "ngbox.compare.projects",
+        "title": "Ngbox : Compare projects"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "explorer": [
+        {
+          "id": "ngbox",
+          "title": "ngbox",
+          "icon": "assets/logo.svg"
+        }
+      ],
+      "activitybar": [
+        {
+          "id": "ngbox",
+          "title": "ngbox",
+          "icon": "assets/logo.svg"
+        }
+      ],
+      "sidebar": [
+        {
+          "id": "ngbox",
+          "title": "ngbox",
+          "icon": "assets/logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "ngbox": [
+        {
+          "id": "ngbox",
+          "name": "components",
+          "type": "tree",
+          "icon": "assets/logo.svg"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ngbox",
+      "properties": {
+        "ngbox.path": {
+          "type": "string",
+          "default": "src/app"
+        },
+        "ngbox.exclude": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/coverage/**",
+            "**/*.spec.ts"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -37,7 +91,8 @@
     "package": "vsce package"
   },
   "dependencies": {
-    "glob": "^8.1.0"
+    "glob": "^8.1.0",
+    "html-pdf": "^3.0.1"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
