@@ -55,9 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const result = await vscode.window.showInputBox({ prompt: 'Please enter two arguments separated by a comma' });
 		if (result) {
 			try {
-				const project1 = "/Users/essejacques.co/projects/mutivers/midgard-firewatch-fe/libs";
-				const project2 = "/Users/essejacques.co/projects/mutivers/midgard-ai";
-				//const [project1, project2] = result.split(",");
+				const [project1, project2] = result.split(",");
 				const results = await compareProjectComponents(project1.trim(), project2.trim());
 				console.log(results);
 				const panel = vscode.window.createWebviewPanel(

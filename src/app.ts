@@ -59,6 +59,7 @@ export function getScanWebviewContent(_unusedComponents: ComponentModel[] | null
 	<body>
 	  <h1>${title}</h1>
 	  <p>Number of ${title} : ${_unusedComponents?.length}</p>
+	
 	  <table>
 		 <thead>
 			<tr>
